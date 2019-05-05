@@ -1,0 +1,195 @@
+Explorando Hackers News Posts
+En este proyecto, compararemos dos tipos diferentes de publicaciones de Hacker News, un sitio popular donde se votan y comentan las historias relacionadas con la tecnología (o "publicaciones"). Los dos tipos de publicaciones que exploraremos comienzan con Ask HN o Show HN.
+
+Los usuarios envían los mensajes de Ask HN para hacerle a la comunidad de Hacker News una pregunta específica, como "¿Cuál es el mejor curso en línea que has tomado?" Del mismo modo, los usuarios envían mensajes de Mostrar HN para mostrar a la comunidad de Hacker News un proyecto, un producto o, en general, algo interesante.
+
+Compararemos específicamente estos dos tipos de publicaciones para determinar lo siguiente:
+
+¿Ask HN o Show HN recibe más comentarios en promedio? ¿Las publicaciones creadas en un momento dado reciben más comentarios en promedio? Cabe señalar que el conjunto de datos con el que estamos trabajando se redujo de casi 300,000 filas a aproximadamente 20,000 filas al eliminar todas las presentaciones que no recibieron ningún comentario y luego realizar un muestreo aleatorio de las presentaciones restantes.
+
+import csv
+diccionario = open('hacker_news.csv')
+hn = list(csv.reader(diccionario))
+print(hn[:5])
+[['id', 'title', 'url', 'num_points', 'num_comments', 'author', 'created_at'], ['12224879', 'Interactive Dynamic Video', 'http://www.interactivedynamicvideo.com/', '386', '52', 'ne0phyte', '8/4/2016 11:52'], ['10975351', 'How to Use Open Source and Shut the Fuck Up at the Same Time', 'http://hueniverse.com/2016/01/26/how-to-use-open-source-and-shut-the-fuck-up-at-the-same-time/', '39', '10', 'josep2', '1/26/2016 19:30'], ['11964716', "Florida DJs May Face Felony for April Fools' Water Joke", 'http://www.thewire.com/entertainment/2013/04/florida-djs-april-fools-water-joke/63798/', '2', '1', 'vezycash', '6/23/2016 22:20'], ['11919867', 'Technology ventures: From Idea to Enterprise', 'https://www.amazon.com/Technology-Ventures-Enterprise-Thomas-Byers/dp/0073523429', '3', '1', 'hswarna', '6/17/2016 0:01']]
+Creamos una nueva lista sin los headers para poder trabajar solamente con los datos que nos interesan
+
+0:5
+headers = hn[0]
+hn = list(hn[1:])
+print(hn[0:5])
+[['12224879', 'Interactive Dynamic Video', 'http://www.interactivedynamicvideo.com/', '386', '52', 'ne0phyte', '8/4/2016 11:52'], ['10975351', 'How to Use Open Source and Shut the Fuck Up at the Same Time', 'http://hueniverse.com/2016/01/26/how-to-use-open-source-and-shut-the-fuck-up-at-the-same-time/', '39', '10', 'josep2', '1/26/2016 19:30'], ['11964716', "Florida DJs May Face Felony for April Fools' Water Joke", 'http://www.thewire.com/entertainment/2013/04/florida-djs-april-fools-water-joke/63798/', '2', '1', 'vezycash', '6/23/2016 22:20'], ['11919867', 'Technology ventures: From Idea to Enterprise', 'https://www.amazon.com/Technology-Ventures-Enterprise-Thomas-Byers/dp/0073523429', '3', '1', 'hswarna', '6/17/2016 0:01'], ['10301696', 'Note by Note: The Making of Steinway L1037 (2007)', 'http://www.nytimes.com/2007/11/07/movies/07stein.html?_r=0', '8', '2', 'walterbell', '9/30/2015 4:12']]
+separando listas
+
+​
+ask_posts = []
+show_posts =[]
+other_posts = []
+​
+for post in hn:
+    title = post[1]
+    if title.lower().startswith("ask hn"):
+        ask_posts.append(post)
+    elif title.lower().startswith("show hn"):
+        show_posts.append(post)
+    else:
+        other_posts.append(post)
+        
+print(len(ask_posts))
+print(len(show_posts))
+print(len(other_posts))
+1744
+1162
+17194
+Sacaremos el porcentaje de las listas que creamos recien
+total_ask_comments = 0
+​
+for post in ask_posts:
+    total_ask_comments += int(post[4])
+    
+avg_ask_comments = total_ask_comments / len(ask_posts)
+print(avg_ask_comments)
+14.038417431192661
+total_show_comments = 0
+​
+for post in show_posts:
+    total_show_comments += int(post[4])
+    
+avg_show_comments = total_show_comments / len(show_posts)
+print(avg_show_comments)
+10.31669535283993
+Encontramos la suma de cantidad de preguntas y comentarios por hora
+import datetime as dt
+​
+result_list = []
+​
+for post in ask_posts:
+    result_list.append( [post[6], int(post[4])] )
+​
+comments_by_hour = {}
+counts_by_hour = {}
+date_format = "%m/%d/%Y %H:%M"
+​
+for each_row in result_list:
+    date = each_row[0]
+    comment = each_row[1]
+    time = dt.datetime.strptime(date, date_format).strftime("%H")
+    if time in counts_by_hour:
+        comments_by_hour[time] += comment
+        counts_by_hour[time] += 1
+    else:
+        comments_by_hour[time] = comment
+        counts_by_hour[time] = 1
+​
+comments_by_hour
+{'00': 447,
+ '01': 683,
+ '02': 1381,
+ '03': 421,
+ '04': 337,
+ '05': 464,
+ '06': 397,
+ '07': 267,
+ '08': 492,
+ '09': 251,
+ '10': 793,
+ '11': 641,
+ '12': 687,
+ '13': 1253,
+ '14': 1416,
+ '15': 4477,
+ '16': 1814,
+ '17': 1146,
+ '18': 1439,
+ '19': 1188,
+ '20': 1722,
+ '21': 1745,
+ '22': 479,
+ '23': 543}
+Calculamos el promedio de comentarios para las publicaciones
+avg_by_hour = []
+​
+for hr in comments_by_hour:
+    avg_by_hour.append([hr, comments_by_hour[hr] / counts_by_hour[hr]])
+​
+avg_by_hour
+[['10', 13.440677966101696],
+ ['03', 7.796296296296297],
+ ['11', 11.051724137931034],
+ ['12', 9.41095890410959],
+ ['21', 16.009174311926607],
+ ['17', 11.46],
+ ['05', 10.08695652173913],
+ ['22', 6.746478873239437],
+ ['08', 10.25],
+ ['15', 38.5948275862069],
+ ['00', 8.127272727272727],
+ ['01', 11.383333333333333],
+ ['20', 21.525],
+ ['06', 9.022727272727273],
+ ['23', 7.985294117647059],
+ ['19', 10.8],
+ ['14', 13.233644859813085],
+ ['09', 5.5777777777777775],
+ ['07', 7.852941176470588],
+ ['13', 14.741176470588234],
+ ['18', 13.20183486238532],
+ ['02', 23.810344827586206],
+ ['16', 16.796296296296298],
+ ['04', 7.170212765957447]]
+Clasificación e impresión de valores de una lista de listas
+​
+swap_avg_by_hour = []
+​
+for row in avg_by_hour:
+    swap_avg_by_hour.append([row[1], row[0]])
+    
+print(swap_avg_by_hour)
+​
+sorted_swap = sorted(swap_avg_by_hour, reverse=True)
+​
+sorted_swap
+[[13.440677966101696, '10'], [7.796296296296297, '03'], [11.051724137931034, '11'], [9.41095890410959, '12'], [16.009174311926607, '21'], [11.46, '17'], [10.08695652173913, '05'], [6.746478873239437, '22'], [10.25, '08'], [38.5948275862069, '15'], [8.127272727272727, '00'], [11.383333333333333, '01'], [21.525, '20'], [9.022727272727273, '06'], [7.985294117647059, '23'], [10.8, '19'], [13.233644859813085, '14'], [5.5777777777777775, '09'], [7.852941176470588, '07'], [14.741176470588234, '13'], [13.20183486238532, '18'], [23.810344827586206, '02'], [16.796296296296298, '16'], [7.170212765957447, '04']]
+[[38.5948275862069, '15'],
+ [23.810344827586206, '02'],
+ [21.525, '20'],
+ [16.796296296296298, '16'],
+ [16.009174311926607, '21'],
+ [14.741176470588234, '13'],
+ [13.440677966101696, '10'],
+ [13.233644859813085, '14'],
+ [13.20183486238532, '18'],
+ [11.46, '17'],
+ [11.383333333333333, '01'],
+ [11.051724137931034, '11'],
+ [10.8, '19'],
+ [10.25, '08'],
+ [10.08695652173913, '05'],
+ [9.41095890410959, '12'],
+ [9.022727272727273, '06'],
+ [8.127272727272727, '00'],
+ [7.985294117647059, '23'],
+ [7.852941176470588, '07'],
+ [7.796296296296297, '03'],
+ [7.170212765957447, '04'],
+ [6.746478873239437, '22'],
+ [5.5777777777777775, '09']]
+print("Top 5 Hours for 'Ask HN' Comments")
+for avg, hr in sorted_swap[:5]:
+    print(
+        "{}: {:.2f} average comments per post".format(
+            dt.datetime.strptime(hr, "%H").strftime("%H:%M"),avg
+        )
+    )
+Top 5 Hours for 'Ask HN' Comments
+15:00: 38.59 average comments per post
+02:00: 23.81 average comments per post
+20:00: 21.52 average comments per post
+16:00: 16.80 average comments per post
+21:00: 16.01 average comments per post
+La hora que recibe la mayor cantidad de comentarios por publicación en promedio es de 15:00, con un promedio de 38.59 comentarios por publicación. Hay un aumento de aproximadamente el 60% en el número de comentarios entre las horas con el mayor y segundo mayor promedio de comentarios
+
+conclusion
+En este proyecto, analizamos las publicaciones y las publicaciones para determinar qué tipo de publicación y en qué momento reciben la mayor cantidad de comentarios en promedio. Sobre la base de nuestro análisis, para maximizar la cantidad de comentarios que recibe una publicación, recomendamos que la publicación se clasifique como preguntar publicación y se cree entre las 15:00 y las 16:00 (3:00 pm est - 4:00 pm est).
+
+Sin embargo, debe tenerse en cuenta que el conjunto de datos que analizamos excluyó las publicaciones sin ningún comentario. Dado que, es más exacto decir que de las publicaciones que recibieron comentarios, preguntar publicaciones recibió más comentarios en promedio y preguntar publicaciones creadas entre las 15:00 y las 16:00 (3:00 pm est - 4:00 pm est) recibió la la mayoría de los comentarios en promedio.
